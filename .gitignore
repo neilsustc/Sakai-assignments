@@ -3,6 +3,7 @@ bin
 release
 .classpath
 .project
+*.log
 
 # Windows image file caches
 Thumbs.db

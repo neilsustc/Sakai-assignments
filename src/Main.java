@@ -1,10 +1,17 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.logging.FileHandler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import javax.swing.UIManager;
 
 public class Main
 {
+    public static Logger logger = Logger.getLogger(Main.class.getName());
+
     public static void main(String[] args)
     {
         setDefualtLookAndFeel();
@@ -15,6 +22,12 @@ public class Main
         String username = config.getValue("username");
         String password = config.getValue("password");
         boolean showOverdueHw = tryParse(config.getValue("showOverdueHw"));
+        boolean debug = tryParse(config.getValue("debug"));
+        if (debug)
+        {
+            configLogger();
+        }
+        logger.info("Configurations loaded.");
         if (username == null || password == null || "".equals(username)
                 || "".equals(password))
         {
@@ -27,6 +40,30 @@ public class Main
             {
                 window.showHws(courseAndHws, showOverdueHw);
             }
+        }
+    }
+
+    private static void configLogger()
+    {
+        try
+        {
+            FileHandler handler = new FileHandler("sakai.log");
+            handler.setFormatter(new SimpleFormatter()
+            {
+                @Override
+                public synchronized String format(LogRecord record)
+                {
+                    return String.format(
+                            "[%s] %s - %s.%s()" + System.lineSeparator(),
+                            record.getLevel(), record.getMessage(),
+                            record.getSourceClassName(),
+                            record.getSourceMethodName());
+                }
+            });
+            logger.addHandler(handler);
+        } catch (SecurityException | IOException e)
+        {
+            e.printStackTrace();
         }
     }
 

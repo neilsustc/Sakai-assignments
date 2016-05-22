@@ -45,13 +45,16 @@ public class Sakai
     {
         LinkedHashMap<String, ArrayList<HW>> courseAndHws = null;
 
+        Main.logger.info("Logining...");
         String sakaiHomePage = login(username, pass);
         if (sakaiHomePage.equals("incorrect"))
         {
             MainWindow.current.showErrorMsg("用户名或密码不正确");
+            Main.logger.severe("Incorrect username or password.");
         } else if (sakaiHomePage.equals("network error"))
         {
             MainWindow.current.showErrorMsg("网络错误");
+            Main.logger.severe("Network error");
         } else
         {
             courseAndHws = new LinkedHashMap<>();
@@ -64,7 +67,10 @@ public class Sakai
                 if (hwSubpageLink != null)
                 {
                     String hwIframeLink = getIframeLink(hwSubpageLink);
+                    Main.logger.info(
+                            String.format("[%s] %s", courseName, hwIframeLink));
                     ArrayList<HW> hws = getHwsFromIframe(hwIframeLink);
+                    Main.logger.info(hws.size() + " assignments.");
                     // sort
                     hws.sort(new Comparator<HW>()
                     {
@@ -150,6 +156,7 @@ public class Sakai
         } catch (IOException | URISyntaxException e)
         {
             e.printStackTrace();
+            Main.logger.severe(e.getMessage());
         } finally
         {
             IOUtils.closeQuietly(response);
@@ -228,6 +235,9 @@ public class Sakai
 
     private static ArrayList<HW> getHwsFromIframe(String iframeLink)
     {
+        // I don't know why 
+        iframeLink = iframeLink.replace("?panel=Main", "");
+
         ArrayList<HW> hws = new ArrayList<>();
 
         String html = doGet(iframeLink);

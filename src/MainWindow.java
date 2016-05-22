@@ -1,3 +1,4 @@
+import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class MainWindow extends JFrame
         add(jlbStatus);
 
         setTitle("Sakai Assignments");
-        setLayout(new StackLayout(StackLayout.VERTICAL, 10));
+        setLayout(new FlowLayout());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
         pack();
@@ -59,30 +60,31 @@ public class MainWindow extends JFrame
         for (Entry<String, ArrayList<HW>> entry : courseAndHws.entrySet())
         {
             ArrayList<HW> hws = entry.getValue();
-            List<HW> unfinished = hws.stream()
-                    .filter(hw -> hw.status.contains("尚未提交")
-                            || hw.status.contains("草稿"))
-                    .collect(Collectors.toList());
-            if (unfinished.size() == 0)
-                continue;
-
-            sb.append(String.format(
-                    "<tr><td colspan='2'><strong>%s</strong></td></tr>",
-                    entry.getKey()));
-            unfinished.stream().forEach(hw ->
+            // filter
+            List<HW> unfinished = hws.stream().filter(hw ->
             {
                 if (hw.isOverdue())
                 {
                     if (showOverdueHw)
-                    {
-                        addRow(sb, hw.title, hw.dueDateTime);
-                    }
+                        return true;
+                    else
+                        return false;
                 } else
                 {
-                    addRow(sb, hw.title, hw.dueDateTime);
+                    return true;
                 }
+            }).collect(Collectors.toList());
 
-            });
+            sb.append(String.format(
+                    "<tr><td colspan='2'><strong>%s</strong></td></tr>",
+                    entry.getKey()));
+            if (unfinished.size() > 0)
+            {
+                unfinished.stream()
+                        .forEach(hw -> addRow(sb, hw.title, hw.dueDateTime));
+            }else {
+                sb.append("<tr><td>No assignment</td></tr>");
+            }
             sb.append(trHr);
         }
         sb.append("</tbody></table>");
