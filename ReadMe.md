@@ -12,6 +12,6 @@ jre 1.8
 
 # Usage
 
+下载release文件夹里的zip文件，解压
 用记事本打开`congfig.properties`，设置账户信息
-
 双击运行jar文件
