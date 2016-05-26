@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -58,33 +59,75 @@ public class Sakai
         } else
         {
             courseAndHws = new LinkedHashMap<>();
-            ArrayList<String> courseLinks = getCourseLinks(sakaiHomePage);
-            for (String courseLink : courseLinks)
+
+            // assignments url cache
+            String cacheFileName = "speedup.cache";
+            if (new File(cacheFileName).exists())
             {
-                Document coursePageDoc = getCoursePageDoc(courseLink);
-                String courseName = getCourseName(coursePageDoc);
-                String hwSubpageLink = getHwSubpageLink(coursePageDoc);
-                if (hwSubpageLink != null)
+                try
                 {
-                    String hwIframeLink = getIframeLink(hwSubpageLink);
-                    Main.logger.info(
-                            String.format("[%s] %s", courseName, hwIframeLink));
-                    ArrayList<HW> hws = getHwsFromIframe(hwIframeLink);
-                    Main.logger.info(hws.size() + " assignments.");
-                    // sort
-                    hws.sort(new Comparator<HW>()
+                    List<String> nameAndUrl = FileUtil.INSTANCE
+                            .readLines(cacheFileName);
+                    Main.logger.info("Cache found.");
+                    for (String str : nameAndUrl)
                     {
-                        @Override
-                        public int compare(HW h1, HW h2)
-                        {
-                            return h1.dueDateTime.compareTo(h2.dueDateTime);
-                        }
-                    });
-                    courseAndHws.put(courseName, hws);
+                        String courseName = str.split("\t")[0];
+                        String url = str.split("\t")[1];
+                        Main.logger.info(
+                                String.format("[%s] %s", courseName, url));
+                        addHws(courseAndHws, courseName, url);
+                    }
+                } catch (IOException e)
+                {
+                    e.printStackTrace();
+                    MainWindow.current.showErrorMsg("Something error");
+                }
+            } else
+            {
+                ArrayList<String> courseLinks = getCourseLinks(sakaiHomePage);
+                List<String> urlCacheList = new ArrayList<>();
+                for (String courseLink : courseLinks)
+                {
+                    Document coursePageDoc = getCoursePageDoc(courseLink);
+                    String courseName = getCourseName(coursePageDoc);
+                    String hwSubpageLink = getHwSubpageLink(coursePageDoc);
+                    if (hwSubpageLink != null)
+                    {
+                        String hwIframeLink = getIframeLink(hwSubpageLink);
+                        Main.logger.info(String.format("[%s] %s", courseName,
+                                hwIframeLink));
+                        urlCacheList.add(courseName + "\t" + hwIframeLink);
+                        addHws(courseAndHws, courseName, hwIframeLink);
+                    }
+                }
+                try
+                {
+                    FileUtil.INSTANCE.writeLines(cacheFileName, urlCacheList);
+                } catch (IOException e)
+                {
+                    e.printStackTrace();
                 }
             }
         }
         return courseAndHws;
+    }
+
+    private static void addHws(
+            LinkedHashMap<String, ArrayList<HW>> courseAndHws,
+            String courseName, String hwIframeLink)
+    {
+        ArrayList<HW> hws = getHwsFromIframe(hwIframeLink);
+        Main.logger.info(hws.size() + " assignments.");
+        // sort
+        hws.sort(new Comparator<HW>()
+        {
+            @Override
+            public int compare(HW h1, HW h2)
+            {
+                return h1.dueDateTime.compareTo(h2.dueDateTime);
+            }
+        });
+        courseAndHws.put(courseName, hws);
     }
 
     private static String login(String username, String password)
@@ -235,7 +278,7 @@ public class Sakai
 
     private static ArrayList<HW> getHwsFromIframe(String iframeLink)
     {
-        // I don't know why 
+        // I don't know why
         iframeLink = iframeLink.replace("?panel=Main", "");
 
         ArrayList<HW> hws = new ArrayList<>();
