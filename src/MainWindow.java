@@ -63,15 +63,21 @@ public class MainWindow extends JFrame
             // filter
             List<HW> unfinished = hws.stream().filter(hw ->
             {
-                if (hw.isOverdue())
+                if (hw.status.contains("已提交"))
                 {
-                    if (showOverdueHw)
-                        return true;
-                    else
-                        return false;
+                    return false;
                 } else
                 {
-                    return true;
+                    if (hw.isOverdue())
+                    {
+                        if (showOverdueHw)
+                            return true;
+                        else
+                            return false;
+                    } else
+                    {
+                        return true;
+                    }
                 }
             }).collect(Collectors.toList());
 
@@ -82,7 +88,8 @@ public class MainWindow extends JFrame
             {
                 unfinished.stream()
                         .forEach(hw -> addRow(sb, hw.title, hw.dueDateTime));
-            }else {
+            } else
+            {
                 sb.append("<tr><td>No assignment</td></tr>");
             }
             sb.append(trHr);
